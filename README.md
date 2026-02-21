@@ -12,21 +12,21 @@ This system demonstrates enterprise-level event management with **race condition
 - **👤 User Registration**: Secure registration with middleware-based user identification  
 - **🔒 Concurrency Control**: Transaction-safe registration with `SELECT FOR UPDATE` row-level locking
 - **📊 Real-time Analytics**: Track available slots and registration statistics
-- **🧪 Automated Testing**: Built-in concurrent load simulation (20-1000+ users)
+- **🧪 Automated Testing**: Built-in concurrent load simulation (20 users)
 - **🛡️ Error Handling**: Comprehensive error responses with proper HTTP status codes
 - **📝 Structured Logging**: Request tracking with user and event context
 
 ## 🏗️ Architecture
 
 ```
-┌─────────────────────────────────────────────────────────────────┐
+┌─────────────────────────────────────────────────────────┐
 │                    HTTP Layer (Gin)                     │
 ├─────────────────────────────────────────────────────────┤
-│                 Business Logic Layer                │
+│                 Business Logic Layer                    │
 ├─────────────────────────────────────────────────────────┤
-│              Data Access Layer (Repository)          │
+│              Data Access Layer (Repository)             │
 ├─────────────────────────────────────────────────────────┤
-│            Database Layer (PostgreSQL)             │
+│            Database Layer (PostgreSQL)                  │
 └─────────────────────────────────────────────────────────┘
 ```
 
@@ -62,7 +62,7 @@ registrations (id, user_id, event_id, created_at)
 - **Foreign Keys**: Referential integrity between tables
 - **Check Constraints**: `capacity > 0`, `available_slots >= 0`
 - **Unique Index**: `(user_id, event_id)` - one registration per user per event
-- **Performance Indexes**: `event_id`, `organizer_id` for common queries
+- **Indexes**: `event_id`, `organizer_id` for common queries
 
 ## 🔒 Concurrency Control Strategy
 
@@ -75,12 +75,12 @@ Time T1: User A reads available_slots = 1
 Time T2: User B reads available_slots = 1
 Time T3: User C reads available_slots = 1
 Time T4: User A registers (decrements to 0)
-Time T5: User B registers (decrements to -1) ❌ OVERBOOKING!
+Time T5: User B registers (decrements to -1) → OVERBOOKING
 ```
 
 ### Database-Level Solution
 
-The system uses **pessimistic locking** with PostgreSQL's `SELECT FOR UPDATE`:
+The system uses **pessimistic locking** with PostgreSQL's `SELECT FOR UPDATE` inside a transaction:
 
 ```go
 func (r *RegistrationRepository) RegisterForEvent(userID, eventID int) error {
@@ -90,10 +90,11 @@ func (r *RegistrationRepository) RegisterForEvent(userID, eventID int) error {
     }
     defer tx.Rollback()
 
-    // 🔒 Lock the event row - other transactions wait
     var availableSlots int
-    err = tx.QueryRow("SELECT available_slots FROM events WHERE id = $1 FOR UPDATE", eventID).Scan(&availableSlots)
-    
+    err = tx.QueryRow(
+        "SELECT available_slots FROM events WHERE id = $1 FOR UPDATE",
+        eventID,
+    ).Scan(&availableSlots)
     if err != nil {
         return err
     }
@@ -102,65 +103,57 @@ func (r *RegistrationRepository) RegisterForEvent(userID, eventID int) error {
         return errors.New("event is full")
     }
 
-    // Atomic operations within transaction
-    _, err = tx.Exec("INSERT INTO registrations (user_id, event_id) VALUES ($1, $2)", userID, eventID)
-    if err != nil {
+    if _, err := tx.Exec(
+        "INSERT INTO registrations (user_id, event_id) VALUES ($1, $2)",
+        userID, eventID,
+    ); err != nil {
         return err
     }
 
-    _, err = tx.Exec("UPDATE events SET available_slots = available_slots - 1 WHERE id = $1", eventID)
-    if err != nil {
+    if _, err := tx.Exec(
+        "UPDATE events SET available_slots = available_slots - 1 WHERE id = $1",
+        eventID,
+    ); err != nil {
         return err
     }
 
-    // ✅ Commit only if all operations succeed
     return tx.Commit()
 }
 ```
 
 ### Why This Works
 
-1. **Row-Level Lock**: `FOR UPDATE` locks the specific event row
-2. **Atomic Transaction**: All operations succeed or fail together
-3. **Immediate Validation**: Check availability before any writes
-4. **Rollback Safety**: Automatic rollback on any failure
+1. **Row-Level Lock**: `FOR UPDATE` locks the specific event row so other transactions wait.
+2. **Atomic Transaction**: Read, insert, and update happen as a single unit.
+3. **Validation Under Lock**: `available_slots` is checked while the row is locked.
+4. **Rollback Safety**: Any error aborts the transaction and leaves data consistent.
 
 ## 🚀 Getting Started
 
 ### Prerequisites
 
-- **Go**: 1.22 or higher
-- **PostgreSQL**: 13+ with SSL support
-- **Git**: For version control
+- Go 1.22+
+- PostgreSQL 13+
+- Git
 
 ### Installation
 
 ```bash
-# Clone the repository
 git clone https://github.com/bhagya518/Event-registration.git
-
-# Navigate to project
 cd Event-registration
 
-# Install dependencies
 go mod tidy
-
-# Copy environment configuration
 cp .env.example .env
-
-# Update with your database credentials
-# Edit .env file with your PostgreSQL connection details
+# Edit .env with your PostgreSQL connection details
 ```
 
 ### Environment Configuration
 
-Create `.env` file from `.env.example`:
-
 ```bash
-# Option 1: Full connection string (recommended for cloud databases)
+# Option 1: Cloud / managed Postgres
 DATABASE_URL=postgresql://username:password@host:port/database?sslmode=require
 
-# Option 2: Individual settings (for local development)
+# Option 2: Local Postgres
 DB_HOST=localhost
 DB_PORT=5432
 DB_USER=postgres
@@ -168,44 +161,41 @@ DB_PASSWORD=postgres
 DB_NAME=event_ticketing_system
 DB_SSLMODE=disable
 
-# Server configuration
 PORT=8080
 ```
 
 ### Database Setup
 
 ```bash
-# Run migration (creates tables and constraints)
-psql "postgresql://username:password@host:port/database" -f migrations/001_create_tables.sql
-
-# Or run with DATABASE_URL
-psql $DATABASE_URL -f migrations/001_create_tables.sql
+psql "postgresql://username:password@host:port/database" \
+  -f migrations/001_create_tables.sql
+# or
+psql "$DATABASE_URL" -f migrations/001_create_tables.sql
 ```
 
-### Running the Application
+### Run the Server
 
 ```bash
-# Start the server
 go run ./cmd/server
-
-# Server will be available at http://localhost:8080
+# API available at http://localhost:8080
 ```
 
 ## 📚 API Documentation
 
 ### Base URL
-```
+
+```text
 http://localhost:8080
 ```
 
-### Endpoints
+### Health Check
 
-#### Health Check
 ```http
 GET /health
 ```
 
-**Response (200)**:
+**Response (200):**
+
 ```json
 {
   "status": "ok",
@@ -213,13 +203,14 @@ GET /health
 }
 ```
 
-#### Events
+### List Events
 
 ```http
 GET /events
 ```
 
-**Response (200)**:
+**Response (200):**
+
 ```json
 [
   {
@@ -234,11 +225,14 @@ GET /events
 ]
 ```
 
+### Create Event
+
 ```http
 POST /events
 ```
 
-**Request Body**:
+**Request body:**
+
 ```json
 {
   "name": "Summer Music Festival",
@@ -248,7 +242,8 @@ POST /events
 }
 ```
 
-**Response (201)**:
+**Response (201):**
+
 ```json
 {
   "id": 2,
@@ -261,13 +256,14 @@ POST /events
 }
 ```
 
-#### Event Details
+### Get Event by ID
 
 ```http
 GET /events/{id}
 ```
 
-**Response (200)**:
+**Response (200):**
+
 ```json
 {
   "id": 1,
@@ -280,18 +276,20 @@ GET /events/{id}
 }
 ```
 
-#### User Registration
+### Register for Event
 
 ```http
 POST /events/{id}/register
 ```
 
-**Headers**:
-```
+**Headers:**
+
+```text
 X-User-ID: 123
 ```
 
-**Response (201)**:
+**Response (201):**
+
 ```json
 {
   "id": 45,
@@ -301,13 +299,14 @@ X-User-ID: 123
 }
 ```
 
-#### Event Registrations
+### List Event Registrations
 
 ```http
 GET /events/{id}/registrations
 ```
 
-**Response (200)**:
+**Response (200):**
+
 ```json
 [
   {
@@ -320,13 +319,14 @@ GET /events/{id}/registrations
 ]
 ```
 
-#### Concurrency Simulation
+### Simulate Concurrent Registrations
 
 ```http
 POST /events/{id}/simulate
 ```
 
-**Response (200)**:
+**Response (200):**
+
 ```json
 {
   "total_attempts": 20,
@@ -338,6 +338,7 @@ POST /events/{id}/simulate
 ### Error Responses
 
 #### 404 Not Found
+
 ```json
 {
   "error": "not_found",
@@ -345,7 +346,8 @@ POST /events/{id}/simulate
 }
 ```
 
-#### 409 Conflict
+#### 409 Conflict (Event Full)
+
 ```json
 {
   "error": "event_full",
@@ -353,7 +355,8 @@ POST /events/{id}/simulate
 }
 ```
 
-#### 401 Unauthorized
+#### 401 Unauthorized (Missing User ID)
+
 ```json
 {
   "error": "missing_user_id",
@@ -366,246 +369,45 @@ POST /events/{id}/simulate
 ### Automated Concurrency Test
 
 ```bash
-# Run the concurrency test
 go test ./internal/tests -v
 
-# Test results show:
-# total=50, successful=1, failed=49
+# Expected:
+# total=20, successful=1, failed=19
 # PASS: TestConcurrentBooking
 ```
 
-The test creates an event with capacity 1, spawns 50 goroutines attempting simultaneous registration, and verifies exactly 1 succeeds.
+The test creates an event with capacity 1, spawns multiple goroutines attempting concurrent registration, and asserts that exactly one succeeds and `available_slots` becomes 0.
 
-### Manual Testing with Thunder Client
+### Manual Testing (Thunder Client / Postman)
 
-1. **Health Check**: Verify server is running
-2. **Create Event**: Test event creation
-3. **List Events**: Verify event listing
-4. **Register Users**: Test registration workflow
-5. **Simulate Load**: Test concurrency control
-6. **Error Cases**: Test edge cases and error handling
+1. `GET /health` – verify server and DB connectivity.
+2. `POST /events` – create an event.
+3. `GET /events` – list events and confirm creation.
+4. `POST /events/{id}/register` with `X-User-ID` – register users.
+5. `POST /events/{id}/simulate` – observe concurrency behavior.
+6. `GET /events/{id}/registrations` – inspect registrations.
 
 ## 🔧 Configuration
 
 ### Environment Variables
 
-| Variable | Description | Default | Example |
-|-----------|-------------|---------|---------|
-| `DATABASE_URL` | Full PostgreSQL connection string | - | `postgresql://user:pass@host:5432/db?sslmode=require` |
-| `DB_HOST` | Database host | `localhost` | `your-db-host.com` |
-| `DB_PORT` | Database port | `5432` | `5432` |
-| `DB_USER` | Database user | `postgres` | `myuser` |
-| `DB_PASSWORD` | Database password | `postgres` | `mypassword` |
-| `DB_NAME` | Database name | `event_ticketing_system` | `myapp_db` |
-| `DB_SSLMODE` | SSL mode | `disable` | `require` |
-| `PORT` | Server port | `8080` | `3000` |
+| Variable       | Description                         | Default                   |
+|----------------|-------------------------------------|---------------------------|
+| `DATABASE_URL` | Full PostgreSQL connection string  | –                         |
+| `DB_HOST`      | Database host                      | `localhost`               |
+| `DB_PORT`      | Database port                      | `5432`                    |
+| `DB_USER`      | Database user                      | `postgres`                |
+| `DB_PASSWORD`  | Database password                  | `postgres`                |
+| `DB_NAME`      | Database name                      | `event_ticketing_system`  |
+| `DB_SSLMODE`   | SSL mode                           | `disable`                 |
+| `PORT`         | HTTP server port                   | `8080`                    |
 
 ### Logging Format
 
-The application uses structured logging with key-value pairs:
+The application uses structured logging with key-value style messages, for example:
 
-```log
+```text
 msg=http_register_success user_id=123 event_id=45 registration_id=789
 msg=http_register_failed_event_full user_id=124 event_id=45
 msg=http_simulate_results event_id=1 total_attempts=20 successful=1 failed=19
 ```
-
-## 📈 Performance Characteristics
-
-### Concurrency Performance
-
-- **Single Registration**: ~50ms (including database transaction)
-- **Concurrent Load**: Handles 20+ simultaneous requests
-- **Database Locking**: Row-level locks prevent contention
-- **Memory Usage**: ~50MB for 1000 concurrent connections
-- **CPU Usage**: Minimal during normal operations
-
-### Scalability
-
-- **Database Connections**: Configurable pool size
-- **Goroutines**: Lightweight, can handle thousands
-- **PostgreSQL**: Scales vertically and horizontally
-- **Load Balancing**: Ready for multiple instances
-
-## 🚀 Deployment
-
-### Production Deployment
-
-```bash
-# Build for production
-go build -o event-ticketing-system ./cmd/server
-
-# Run with production configuration
-export GIN_MODE=release
-./event-ticketing-system
-```
-
-### Docker Deployment (Optional)
-
-```dockerfile
-FROM golang:1.22-alpine AS builder
-WORKDIR /app
-COPY go.mod go.sum ./
-RUN go mod download
-COPY . .
-RUN go build -o main ./cmd/server
-
-FROM alpine:latest
-RUN apk --no-cache add ca-certificates
-WORKDIR /root/
-COPY --from=builder /app/main .
-EXPOSE 8080
-CMD ["./main"]
-```
-
-### Environment-Specific Configuration
-
-#### Development
-```bash
-GIN_MODE=debug
-log_level=debug
-db_connection_pool=5
-```
-
-#### Production
-```bash
-GIN_MODE=release
-log_level=info
-db_connection_pool=20
-ssl_verification=full
-```
-
-## 🔐 Security Considerations
-
-### Database Security
-- **Parameterized Queries**: Prevents SQL injection
-- **Connection Encryption**: SSL/TLS required for production
-- **Least Privilege**: Dedicated database user with limited permissions
-- **Connection Pooling**: Prevents connection exhaustion
-
-### API Security
-- **Header Validation**: X-User-ID header validation
-- **Input Sanitization**: JSON schema validation
-- **Error Handling**: No sensitive data in error messages
-- **Rate Limiting**: Ready for implementation
-
-### Authentication & Authorization
-- **Middleware Ready**: X-User-ID header extraction
-- **Role-Based Access**: User/Organizer roles defined
-- **JWT Support**: Ready for token-based auth integration
-
-## 📊 Monitoring & Observability
-
-### Health Metrics
-- Database connectivity status
-- Active connection count
-- Response time tracking
-- Error rate monitoring
-
-### Application Metrics
-- Registration success/failure rates
-- Event creation statistics
-- Concurrent load performance
-- Resource utilization
-
-## 🔄 CI/CD Integration
-
-### GitHub Actions (Example)
-
-```yaml
-name: CI/CD Pipeline
-
-on:
-  push:
-    branches: [ main ]
-  pull_request:
-    branches: [ main ]
-
-jobs:
-  test:
-    runs-on: ubuntu-latest
-    services:
-      postgres:
-        image: postgres:13
-        env:
-          POSTGRES_PASSWORD: postgres
-          POSTGRES_DB: test_db
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-
-    steps:
-    - uses: actions/checkout@v3
-    - name: Set up Go
-      uses: actions/setup-go@v4
-      with:
-        go-version: '1.22'
-    
-    - name: Install dependencies
-      run: go mod download
-    
-    - name: Run tests
-      run: go test ./... -v
-      env:
-        DATABASE_URL: postgres://postgres:postgres@localhost:5432/test_db?sslmode=disable
-    
-    - name: Build application
-      run: go build ./cmd/server
-```
-
-## 🤝 Contributing
-
-### Development Workflow
-
-1. **Fork** the repository
-2. **Create** feature branch: `git checkout -b feature-name`
-3. **Make** changes with comprehensive testing
-4. **Run** tests: `go test ./...`
-5. **Commit** changes: `git commit -m "Add feature description"`
-6. **Push** branch: `git push origin feature-name`
-7. **Create** Pull Request
-
-### Code Standards
-
-- **Go Formatting**: `gofmt -s -w .`
-- **Testing**: All new features must include tests
-- **Documentation**: Update README for API changes
-- **Error Handling**: Proper error propagation and logging
-- **Performance**: Consider database query optimization
-
-### Commit Message Format
-
-```
-type(scope): brief description
-
-Examples:
-feat(api): add event cancellation endpoint
-fix(db): resolve concurrent registration deadlock
-docs(readme): update API documentation
-test(concurrency): add stress test for 1000 users
-```
-
-## 📜 License
-
-This project is licensed under the MIT License - see [LICENSE](LICENSE) file for details.
-
-## 👥 Acknowledgments
-
-- **Gin Framework**: High-performance HTTP web framework
-- **PostgreSQL**: Robust relational database with advanced locking
-- **Go Community**: Excellent standard library and ecosystem
-- **Clean Architecture**: Inspiration from industry best practices
-
-## 📞 Support
-
-For questions, issues, or contributions:
-
-- **GitHub Issues**: [Create an issue](https://github.com/bhagya518/Event-registration/issues)
-- **Discussions**: [Start a discussion](https://github.com/bhagya518/Event-registration/discussions)
-- **Email**: For security concerns, contact maintainers privately
-
----
-
-**Built with ❤️ using Go, Gin, and PostgreSQL**
