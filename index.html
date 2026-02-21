@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Event Registration & Ticketing System</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+        .title {
+            font-size: 2.5em;
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+        .subtitle {
+            font-size: 1.2em;
+            color: #666;
+            margin-bottom: 30px;
+        }
+        .features {
+            background: #f8f9fa;
+            padding: 30px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+        }
+        .features h3 {
+            color: #2c3e50;
+            margin-bottom: 15px;
+        }
+        .features ul {
+            list-style: none;
+            padding: 0;
+        }
+        .features li {
+            margin-bottom: 10px;
+            padding-left: 20px;
+            position: relative;
+        }
+        .features li:before {
+            content: "✅";
+            position: absolute;
+            left: 0;
+        }
+        .links {
+            text-align: center;
+            margin-top: 40px;
+        }
+        .links a {
+            display: inline-block;
+            margin: 10px;
+            padding: 12px 24px;
+            background: #2c3e50;
+            color: white;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: 500;
+        }
+        .links a:hover {
+            background: #1a2e42;
+        }
+        .footer {
+            text-align: center;
+            margin-top: 40px;
+            color: #666;
+            font-size: 0.9em;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1 class="title">Event Registration & Ticketing System</h1>
+        <p class="subtitle">Production-ready REST API with advanced concurrency control</p>
+    </div>
+
+    <div class="features">
+        <h3>🎯 Key Features</h3>
+        <ul>
+            <li>Event Management with capacity controls</li>
+            <li>User Registration with middleware authentication</li>
+            <li>Concurrency Control with database-level locking</li>
+            <li>Real-time Analytics and slot tracking</li>
+            <li>Automated Testing with concurrency simulation</li>
+            <li>Comprehensive Error Handling</li>
+            <li>Structured Logging for observability</li>
+        </ul>
+    </div>
+
+    <div class="features">
+        <h3>🏗️ Architecture</h3>
+        <ul>
+            <li>Clean Architecture with separation of concerns</li>
+            <li>Go + Gin + PostgreSQL technology stack</li>
+            <li>Transaction-safe database operations</li>
+            <li>Row-level locking prevents race conditions</li>
+        </ul>
+    </div>
+
+    <div class="features">
+        <h3>🔒 Concurrency Control</h3>
+        <ul>
+            <li>Database-level pessimistic locking</li>
+            <li>Atomic transactions with rollback safety</li>
+            <li>SELECT FOR UPDATE prevents overbooking</li>
+            <li>Automated testing validates race condition prevention</li>
+        </ul>
+    </div>
+
+    <div class="links">
+        <a href="https://github.com/bhagya518/Event-registration" target="_blank">📚 View Documentation</a>
+        <a href="https://github.com/bhagya518/Event-registration/blob/main/README.md" target="_blank">📖 README</a>
+        <a href="https://github.com/bhagya518/Event-registration" target="_blank">💻 Source Code</a>
+    </div>
+
+    <div class="footer">
+        <p>Built with ❤️ using Go, Gin, and PostgreSQL</p>
+    </div>
+</body>
+</html>
