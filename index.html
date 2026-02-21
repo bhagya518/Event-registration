@@ -3,274 +3,186 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Event Registration & Ticketing System</title>
+<title>Capstone Project 5 | Event Registration & Ticketing System</title>
 
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 
 <style>
 :root {
-    --primary: #0f172a;
-    --accent: #2563eb;
-    --muted: #64748b;
-    --bg: #f8fafc;
-    --card: #ffffff;
+  --primary: #0f172a;
+  --accent: #2563eb;
+  --muted: #64748b;
+  --bg: #f8fafc;
+  --card: #ffffff;
 }
 
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-}
+* { margin: 0; padding: 0; box-sizing: border-box; }
 
 body {
-    font-family: 'Inter', sans-serif;
-    background: var(--bg);
-    color: var(--primary);
-    line-height: 1.6;
+  font-family: 'Inter', sans-serif;
+  background: var(--bg);
+  color: var(--primary);
+  line-height: 1.6;
 }
 
 .container {
-    max-width: 1100px;
-    margin: auto;
-    padding: 40px 20px;
+  max-width: 1000px;
+  margin: auto;
+  padding: 60px 20px;
 }
 
-.hero {
-    text-align: center;
-    padding: 80px 20px 60px;
+h1 {
+  font-size: 2.6rem;
+  margin-bottom: 20px;
+  text-align: center;
 }
 
-.hero h1 {
-    font-size: 3rem;
-    font-weight: 700;
-    margin-bottom: 20px;
-}
-
-.hero p {
-    font-size: 1.2rem;
-    color: var(--muted);
-    max-width: 700px;
-    margin: auto;
-}
-
-.badges {
-    margin-top: 25px;
-}
-
-.badges span {
-    display: inline-block;
-    background: #e2e8f0;
-    padding: 6px 12px;
-    border-radius: 20px;
-    font-size: 0.85rem;
-    margin: 5px;
+.subtitle {
+  text-align: center;
+  color: var(--muted);
+  margin-bottom: 60px;
+  font-size: 1.1rem;
 }
 
 .section {
-    margin-top: 80px;
+  margin-bottom: 60px;
 }
 
 .section h2 {
-    font-size: 2rem;
-    margin-bottom: 30px;
-}
-
-.grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-    gap: 25px;
+  font-size: 1.6rem;
+  margin-bottom: 20px;
 }
 
 .card {
-    background: var(--card);
-    padding: 25px;
-    border-radius: 12px;
-    box-shadow: 0 8px 20px rgba(0,0,0,0.05);
-    transition: transform 0.2s ease;
+  background: var(--card);
+  padding: 25px;
+  border-radius: 10px;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.05);
+  margin-bottom: 20px;
 }
 
-.card:hover {
-    transform: translateY(-5px);
-}
-
-.card h3 {
-    margin-bottom: 15px;
-    font-size: 1.1rem;
-}
-
-.card p {
-    color: var(--muted);
-    font-size: 0.95rem;
-}
-
-.metrics {
-    display: flex;
-    justify-content: space-around;
-    text-align: center;
-    margin-top: 40px;
-}
-
-.metric h3 {
-    font-size: 2rem;
-    color: var(--accent);
-}
-
-.metric p {
-    color: var(--muted);
+ul {
+  padding-left: 20px;
+  color: var(--muted);
 }
 
 .links {
-    margin-top: 60px;
-    text-align: center;
+  text-align: center;
+  margin-top: 50px;
 }
 
 .links a {
-    display: inline-block;
-    margin: 10px;
-    padding: 12px 26px;
-    border-radius: 8px;
-    font-weight: 500;
-    text-decoration: none;
-    transition: 0.2s ease;
+  display: inline-block;
+  margin: 10px;
+  padding: 14px 28px;
+  border-radius: 8px;
+  text-decoration: none;
+  font-weight: 500;
+  transition: 0.2s ease;
 }
 
-.primary-btn {
-    background: var(--accent);
-    color: white;
+.primary {
+  background: var(--accent);
+  color: white;
 }
 
-.secondary-btn {
-    background: #e2e8f0;
-    color: var(--primary);
+.secondary {
+  background: #e2e8f0;
+  color: var(--primary);
 }
 
-.primary-btn:hover {
-    background: #1e40af;
-}
-
-.secondary-btn:hover {
-    background: #cbd5e1;
-}
+.primary:hover { background: #1e40af; }
+.secondary:hover { background: #cbd5e1; }
 
 .footer {
-    margin-top: 100px;
-    padding: 40px 0;
-    text-align: center;
-    font-size: 0.9rem;
-    color: var(--muted);
+  text-align: center;
+  margin-top: 80px;
+  font-size: 0.9rem;
+  color: var(--muted);
 }
 </style>
 </head>
 
 <body>
 
-<div class="hero">
-    <h1>Event Registration & Ticketing System</h1>
-    <p>
-        A production-grade REST API engineered for high-concurrency environments.
-        Built with transactional integrity, database-level locking, and clean architectural boundaries.
-    </p>
-
-    <div class="badges">
-        <span>Go</span>
-        <span>Gin</span>
-        <span>PostgreSQL</span>
-        <span>Row-Level Locking</span>
-        <span>Clean Architecture</span>
-        <span>Concurrency-Safe</span>
-    </div>
-</div>
-
 <div class="container">
 
-    <div class="section">
-        <h2>System Guarantees</h2>
-        <div class="grid">
-            <div class="card">
-                <h3>🔒 Zero Overbooking</h3>
-                <p>
-                    Implements SELECT FOR UPDATE with pessimistic locking to ensure atomic seat allocation.
-                </p>
-            </div>
+<h1>Capstone Project 5: Event Registration & Ticketing System</h1>
 
-            <div class="card">
-                <h3>⚡ Concurrency Resilience</h3>
-                <p>
-                    Designed to handle simultaneous booking requests without race conditions or data corruption.
-                </p>
-            </div>
+<p class="subtitle">
+A production-grade REST API for event registration and ticketing (similar to Eventbrite),
+designed to handle high concurrency and prevent overbooking using database-level locking
+and transactional guarantees.
+</p>
 
-            <div class="card">
-                <h3>🧱 Clean Architecture</h3>
-                <p>
-                    Clear separation between HTTP layer, services, repositories, and database boundaries.
-                </p>
-            </div>
+<div class="section">
+<h2>Project Deliverables Implemented</h2>
 
-            <div class="card">
-                <h3>📊 Observability</h3>
-                <p>
-                    Structured logging, error wrapping, and deterministic rollback strategies.
-                </p>
-            </div>
-        </div>
-    </div>
+<div class="card">
+<h3>Complete REST API</h3>
+<ul>
+<li>Event creation and management endpoints</li>
+<li>User registration for events with limited capacity</li>
+<li>Event browsing and registration tracking</li>
+<li>Health check endpoint for service monitoring</li>
+</ul>
+</div>
 
-    <div class="section">
-        <h2>Architecture Overview</h2>
+<div class="card">
+<h3>Database Schema & Constraints</h3>
+<ul>
+<li>PostgreSQL schema with proper foreign key relationships</li>
+<li>Capacity constraints enforced at the database level</li>
+<li>ACID-compliant transactions</li>
+<li>Row-level locking for safe seat allocation</li>
+</ul>
+</div>
 
-<pre style="background:#0f172a;color:#e2e8f0;padding:20px;border-radius:10px;overflow:auto;">
-Client
-  │
-  ▼
-Gin HTTP Layer
-  │
-  ▼
-Service Layer (Business Logic)
-  │
-  ▼
-Repository Layer
-  │
-  ▼
-PostgreSQL (Transactions + Row Locks)
-</pre>
-    </div>
+<div class="card">
+<h3>Concurrent Booking Simulation</h3>
+<ul>
+<li>Automated test simulating 20 concurrent users</li>
+<li>Single available slot scenario</li>
+<li>Expected outcome: 1 success, remaining controlled failures</li>
+<li>Validates race-condition resistance</li>
+</ul>
+</div>
 
-    <div class="section">
-        <h2>Performance & Reliability</h2>
+<div class="card">
+<h3>Race Condition Prevention Strategy</h3>
+<ul>
+<li>Uses <strong>SELECT FOR UPDATE</strong> for pessimistic locking</li>
+<li>Wraps booking flow inside database transactions</li>
+<li>Atomic seat decrement logic</li>
+<li>Rollback mechanism on failure</li>
+<li>Ensures zero overbooking under concurrent load</li>
+</ul>
+</div>
 
-        <div class="metrics">
-            <div class="metric">
-                <h3>ACID</h3>
-                <p>Transaction Safe</p>
-            </div>
+<div class="card">
+<h3>Documentation</h3>
+<ul>
+<li>Comprehensive README with API reference</li>
+<li>Technical deep dive into concurrency strategy</li>
+<li>Clear explanation of locking model and transaction flow</li>
+</ul>
+</div>
 
-            <div class="metric">
-                <h3>100%</h3>
-                <p>Race Condition Coverage (Tested)</p>
-            </div>
+</div>
 
-            <div class="metric">
-                <h3>Pessimistic</h3>
-                <p>Locking Strategy</p>
-            </div>
-        </div>
-    </div>
+<div class="links">
+<a href="https://github.com/bhagya518/Event-registration" target="_blank" class="primary">
+📁 Project Repository
+</a>
 
-    <div class="links">
-        <a href="https://github.com/bhagya518/Event-registration" target="_blank" class="primary-btn">
-            View Source Code
-        </a>
+<a href="https://github.com/bhagya518/Event-registration/blob/main/README.md" target="_blank" class="secondary">
+📄 Technical README
+</a>
+</div>
 
-        <a href="https://github.com/bhagya518/Event-registration/blob/main/README.md" target="_blank" class="secondary-btn">
-            Technical Documentation
-        </a>
-    </div>
-
-    <div class="footer">
-        Engineered with production principles in mind. <br>
-        Built using Go, Gin, PostgreSQL, and strict transactional guarantees.
-    </div>
+<div class="footer">
+Engineered using Go, Gin, and PostgreSQL with production-grade concurrency handling.
+</div>
 
 </div>
 

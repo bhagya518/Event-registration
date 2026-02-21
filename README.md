@@ -402,12 +402,4 @@ The test creates an event with capacity 1, spawns multiple goroutines attempting
 | `DB_SSLMODE`   | SSL mode                           | `disable`                 |
 | `PORT`         | HTTP server port                   | `8080`                    |
 
-### Logging Format
-
-The application uses structured logging with key-value style messages, for example:
-
-```text
-msg=http_register_success user_id=123 event_id=45 registration_id=789
-msg=http_register_failed_event_full user_id=124 event_id=45
-msg=http_simulate_results event_id=1 total_attempts=20 successful=1 failed=19
 ```
